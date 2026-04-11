@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+.env
+
+data/raw/news_recommendation/*
+!data/raw/news_recommendation/.gitkeep
+
+data/processed/temp_results/*
+!data/processed/temp_results/.gitkeep
+
+outputs/*
+!outputs/.gitkeep
