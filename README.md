@@ -1,69 +1,83 @@
-# chapter_5_projects_all
+# RankMixer recommendation project
 
-一个可独立抽出的新闻推荐实验项目，包含：
+`rankmixer_fair_ablation_v2_score.ipynb` 的工程化实现。代码按推荐系统项目常见分层组织，旧 notebook service 名称作为 CLI alias 保留。
 
-- `4.recall_all.ipynb`：多路召回
-- `5.feature_engineering_all.ipynb`：特征工程
-- `jrc-ranking_all.ipynb`：PyTorch 版 JRC 排序
-
-## 目录结构
+## Project layout
 
 ```text
-chapter_5_projects_all/
-├── 4.recall_all.ipynb
-├── 5.feature_engineering_all.ipynb
-├── jrc-ranking_all.ipynb
-├── requirements.txt
-├── .gitignore
-├── data/
-│   ├── raw/
-│   │   └── news_recommendation/
-│   └── processed/
-│       └── temp_results/
-└── outputs/
+rec/
+├── config.py              # 路径、数据、模型、loss、训练配置
+├── features.py            # 特征定义、rank/score 特征、article SVD、token schema
+├── data.py                # 数据读取、历史序列、采样 batch、DataLoader 输入
+├── models/rankmixer.py    # RankMixerRanker 和模型组件
+├── losses.py              # BalancedGE、OldGE、JRC-BPR、Listwise-BPR-BCE 等 loss class
+├── evaluate.py            # AUC/NDCG/MRR/HitRate 和预测表
+├── train.py               # RankMixerTrainer
+├── pipeline.py            # 场景编排与 CLI
+└── services/              # RankMixer CLI service 入口
 ```
 
-## 原始数据放置位置
+## Data
 
-把原始数据文件放到：
+原始数据放在：
 
-`data/raw/news_recommendation/`
+```text
+data/raw/news_recommendation/
+```
 
-至少需要这些文件：
+至少需要：
 
 - `articles.csv`
 - `articles_emb.csv`
 - `train_click_log.csv`
 - `testA_click_log.csv`
 
-## 安装依赖
+RankMixer 训练读取 `data/processed/temp_results/` 下的候选特征表，例如：
 
-在项目根目录执行：
+- `trn_user_item_feats_df_all_rankmixer_v2_top64.csv`
+- `val_user_item_feats_df_all.csv`
+- `tst_user_item_feats_df_all.csv`
+- `click_hist_all.csv`
+
+## Usage
+
+查看可用入口：
 
 ```bash
-pip install -r requirements.txt
+python -m rec.app.main --list
 ```
 
-## 运行顺序
-
-请先进入项目根目录，再打开 notebook：
+预览工程结构和实验场景：
 
 ```bash
-cd chapter_5_projects_all
+python -m rec.app.main rankmixer_score --preview
 ```
 
-按顺序运行：
+训练一个小样本 smoke：
 
-1. `4.recall_all.ipynb`
-2. `5.feature_engineering_all.ipynb`
-3. `jrc-ranking_all.ipynb`
+```bash
+python -m rec.app.main rankmixer_score --train --scenario jrc_bpr --limit-rows 1024 --epochs 1 --batch-size 128 --no-article-svd
+```
 
-## 文件输出位置
+正式训练：
 
-- 中间结果：`data/processed/temp_results/`
-- 导出结果与提交文件：`outputs/`
+```bash
+python -m rec.app.main rankmixer_score --train --scenario jrc_bpr --train-variant top64 --epochs 5 --batch-size 128
+```
 
-## 说明
+### wandb
 
-- 本项目默认使用纯相对路径，不依赖 `.env` 或 `FUNREC_*` 环境变量。
-- 原始数据和中间结果默认不提交到 Git。
+训练可通过 `--wandb` 开启 wandb 记录，常用参数包括：
+
+- wandb 配置：`--wandb-project`、`--wandb-entity`、`--wandb-run-name`、`--wandb-mode`、`--wandb-group`、`--wandb-tags`、`--wandb-log-every-n-steps`、`--wandb-watch`、`--wandb-watch-log`、`--wandb-watch-log-freq`、`--wandb-log-model`、`--no-wandb-prediction-artifacts`
+- 训练超参：`--weight-decay`、`--grad-clip-norm`、`--topk`
+
+wandb 会记录 git commit/dirty status、模型结构 artifact、超参数、batch size、lr、`scheduler=none`、loss、step 级 train loss/lr/grad_norm/update_norm、epoch 级 val loss/MRR/NDCG、预测表 artifact、运行环境/设备/依赖版本。
+
+示例：
+
+```bash
+python -m rec.app.main rankmixer_score --train --scenario jrc_bpr --train-variant top64 --epochs 5 --batch-size 128 --wandb --wandb-project funrec-rankmixer --wandb-run-name jrc-bpr-top64 --weight-decay 0.01 --grad-clip-norm 1.0 --topk 20
+```
+
+输出写入 `outputs/`。

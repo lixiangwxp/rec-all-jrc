@@ -1,0 +1,49 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "RankMixer: preview project",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "rec.app.main",
+            "args": [
+                "rankmixer_score",
+                "--preview"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "RankMixer: smoke train jrc_bpr",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "rec.app.main",
+            "args": [
+                "rankmixer_score",
+                "--train",
+                "--scenario",
+                "jrc_bpr",
+                "--limit-users",
+                "50",
+                "--epochs",
+                "1",
+                "--batch-size",
+                "128",
+                "--no-article-svd"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: current file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
